@@ -1,53 +1,172 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>My Kite Portfolio</title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  >
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock News Dashboard</title>
+    <!-- Fetches Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* A light gray background for the whole page */
+        body {
+            background-color: #f3f4f6;
+        }
+    </style>
 </head>
-<body class="p-4">
-  <div class="container">
-    <h1 class="mb-4">My Kite Holdings</h1>
-    <table class="table table-striped">
-      <thead class="table-dark">
-        <tr>
-          <th>Symbol</th><th>Qty</th><th>Avg Price</th><th>Last Price</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for h in data %}
-        <tr>
-          <td>{{ h.symbol }}</td>
-          <td>{{ h.quantity }}</td>
-          <td>{{ h.avg_price }}</td>
-          <td>{{ h.last_price }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+<body class="font-sans text-gray-800">
 
-    <h2 class="mt-5">Latest News</h2>
-    {% for h in data %}
-      <div class="card mb-3">
-        <div class="card-header">
-          <strong>{{ h.symbol }}</strong>
-        </div>
-        <ul class="list-group list-group-flush">
-          {% for art in h.articles %}
-          <li class="list-group-item">
-            <a href="{{ art.url }}" target="_blank">{{ art.title }}</a><br>
-            <small class="text-muted">{{ art.source.name }} • {{ art.publishedAt[:10] }}</small>
-          </li>
-          {% endfor %}
-          {% if not h.articles %}
-          <li class="list-group-item text-muted">No recent articles found.</li>
-          {% endif %}
-        </ul>
-      </div>
-    {% endfor %}
-  </div>
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">📈 My AI News Dashboard</h1>
+            <p class="text-lg text-gray-600">Your daily briefing on market-moving news.</p>
+        </header>
+
+        <!-- Top Headlines Section -->
+        <section id="top-headlines" class="mb-12">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-3">🌐 Top Business Headlines (India)</h2>
+                <!-- This list will now be populated by JavaScript -->
+                <ul id="top-headlines-list" class="space-y-3">
+                    <li class="text-gray-500 italic">Loading headlines...</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Holdings Section -->
+        <section id="holdings">
+            <h2 class="text-3xl font-bold mb-6 text-gray-900">💼 Your Holdings</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for holding in data %}
+                <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col transition-transform hover:scale-105 duration-300">
+                    <!-- Top part of the card with stock info -->
+                    <div class="p-6 border-b">
+                        <h3 class="text-2xl font-bold text-gray-900">{{ holding.symbol }}</h3>
+                        <div class="mt-2 text-sm text-gray-600 space-y-1">
+                            <p><strong>Qty:</strong> {{ holding.quantity }} &bull; <strong>Avg:</strong> ₹{{ '%.2f'|format(holding.avg_price|float) }}</p>
+                            <p><strong>Last Price:</strong> ₹{{ '%.2f'|format(holding.last_price|float) if holding.last_price is not none else 'N/A' }}</p>
+                            <p>
+                                <strong>P/E:</strong> {{ '%.2f'|format(holding.pe_ratio|float) if holding.pe_ratio is not none else 'N/A' }} &bull;
+                                <strong>EPS:</strong> {{ '%.2f'|format(holding.eps|float) if holding.eps is not none else 'N/A' }} &bull;
+                                <strong>ROE:</strong> {{ '%.2f'|format(holding.roce * 100) if holding.roce is not none else 'N/A' }}%
+                            </p>
+                        </div>
+                        <div class="mt-4 flex flex-wrap gap-2 text-xs">
+                            {# Day Change #}
+                            {% if holding.day_change_pct is not none %}
+                                <span class="px-2 py-1 rounded-full font-semibold
+                                    {% if holding.day_change_pct > 0 %} bg-green-100 text-green-800
+                                    {% elif holding.day_change_pct < 0 %} bg-red-100 text-red-800
+                                    {% else %} bg-gray-100 text-gray-800 {% endif %}">
+                                    1D: {{ '%+.2f'|format(holding.day_change_pct) }}%
+                                </span>
+                            {% endif %}
+                            {# Week Change #}
+                            {% if holding.week_change_pct is not none %}
+                                <span class="px-2 py-1 rounded-full font-semibold
+                                    {% if holding.week_change_pct > 0 %} bg-green-100 text-green-800
+                                    {% elif holding.week_change_pct < 0 %} bg-red-100 text-red-800
+                                    {% else %} bg-gray-100 text-gray-800 {% endif %}">
+                                    1W: {{ '%+.2f'|format(holding.week_change_pct) }}%
+                                </span>
+                            {% endif %}
+                            {# Month Change #}
+                            {% if holding.month_change_pct is not none %}
+                                <span class="px-2 py-1 rounded-full font-semibold
+                                    {% if holding.month_change_pct > 0 %} bg-green-100 text-green-800
+                                    {% elif holding.month_change_pct < 0 %} bg-red-100 text-red-800
+                                    {% else %} bg-gray-100 text-gray-800 {% endif %}">
+                                    1M: {{ '%+.2f'|format(holding.month_change_pct) }}%
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- Bottom part of the card with news articles -->
+                    <div class="p-6 bg-gray-50 flex-grow">
+                        <h4 class="font-semibold mb-3 text-gray-700">Relevant News</h4>
+                        <ul class="space-y-4">
+                            {% for article in holding.articles %}
+                                <li>
+                                    <div class="flex items-start space-x-3">
+                                        <!-- Sentiment dot: Green for positive, Red for negative, Yellow for neutral -->
+                                        <span class="flex-shrink-0 mt-1.5 w-2.5 h-2.5 rounded-full
+                                            {% if article.sentiment > 0.3 %} bg-green-500
+                                            {% elif article.sentiment < -0.3 %} bg-red-500
+                                            {% else %} bg-yellow-500 {% endif %}"
+                                            title="Sentiment: {{ '%.2f'|format(article.sentiment) }}">
+                                        </span>
+                                        <div>
+                                            <a href="{{ article.url }}" target="_blank" class="text-blue-600 hover:underline">{{ article.title }}</a>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                <span>{{ article.source.name }}</span> &bull;
+                                                <span>{{ article.publishedAt }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% else %}
+                                <li class="text-sm text-gray-500 italic">No relevant news found in the last 7 days.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+    </div>
+
+    <!-- JavaScript for auto-fetching headlines -->
+    <script>
+        const headlinesList = document.getElementById('top-headlines-list');
+
+        async function fetchTopHeadlines() {
+            console.log('Fetching top headlines...');
+            try {
+                const response = await fetch('/api/top-headlines');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const articles = await response.json();
+
+                // Clear the current list
+                headlinesList.innerHTML = '';
+
+                if (articles.length === 0) {
+                    headlinesList.innerHTML = '<li class="text-gray-500 italic">No top headlines found.</li>';
+                    return;
+                }
+                
+                // Build and append new list items
+                articles.forEach(article => {
+                    const li = document.createElement('li');
+                    li.className = 'group';
+                    // Sanitize potential null values
+                    const title = article.title || 'No title available';
+                    const url = article.url || '#';
+                    const sourceName = (article.source && article.source.name) || 'Unknown source';
+                    const publishedAt = article.publishedAt || '';
+
+                    li.innerHTML = `
+                        <a href="${url}" target="_blank" class="text-blue-600 group-hover:underline font-medium">${title}</a>
+                        <div class="text-sm text-gray-500 mt-1">
+                            <span>${sourceName}</span> &bull;
+                            <span>${publishedAt}</span>
+                        </div>
+                    `;
+                    headlinesList.appendChild(li);
+                });
+
+            } catch (error) {
+                console.error('Failed to fetch top headlines:', error);
+                headlinesList.innerHTML = '<li class="text-red-500 italic">Could not load headlines. Please try refreshing the page.</li>';
+            }
+        }
+
+        // Fetch headlines when the page first loads
+        document.addEventListener('DOMContentLoaded', fetchTopHeadlines);
+
+        // Set an interval to fetch headlines every 5 minutes (300000 milliseconds)
+        setInterval(fetchTopHeadlines, 300000);
+    </script>
 </body>
 </html>

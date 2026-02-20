@@ -1,0 +1,43 @@
+# This file defines the services for your application on Render.
+# You can commit this file to your Git repository.
+# Render will automatically detect it and set up your services.
+
+services:
+  # 1. The PostgreSQL Database
+  # This service creates a managed PostgreSQL database for your app.
+  - type: psql
+    name: fintech-postgres-db
+    # The 'plan' determines performance and cost. 'free' is great for development.
+    plan: free
+    # Render automatically handles the DATABASE_URL for you.
+
+  # 2. The FastAPI Web Service
+  # This service runs your main Python application (app.py).
+  - type: web
+    name: fintech-app
+    # Specifies the runtime environment.
+    env: python
+    plan: free
+    # Tells Render how to install your Python dependencies using your uv.lock file.
+    buildCommand: "uv pip sync"
+    # This command runs *before* the service starts.
+    # It connects to the database and creates all the necessary tables.
+    preDeployCommand: "python -c 'import asyncio; from database import create_db_and_tables; asyncio.run(create_db_and_tables())'"
+    # The command to start your web server using uv.
+    # Render provides the $PORT environment variable.
+    startCommand: "uv run --host 0.0.0.0 --port $PORT app:app"
+    envVars:
+      # This tells Render to get secrets from an Environment Group.
+      # This is where you'll store your API keys and database URL.
+      # The key 'DATABASE_URL' will be automatically provided by the 'fintech-postgres-db' service above.
+      - fromGroup: fintech-app-secrets
+      # It's good practice to set PYTHON_VERSION for consistency.
+      - key: PYTHON_VERSION
+        value: 3.11
+
+# To use this file:
+# 1. Commit this `render.yaml` to your Git repository.
+# 2. Go to the Render dashboard and create a new "Blueprint" service.
+# 3. Connect the Git repository. Render will read this file and configure everything.
+# 4. In the Render dashboard, create an "Environment Group" named 'fintech-app-secrets'.
+# 5. In that group, add your secrets: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY, BRAVE_API_KEY, and OPENAI_API_KEY.
